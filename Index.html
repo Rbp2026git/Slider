@@ -1,1 +1,340 @@
 
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Infinite Slider</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --card-gap: 24px;
+      --card-radius: 18px;
+      --accent: #e8c87d;
+      --dot-size: 10px;
+    }
+
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+      padding: 40px 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      color: var(--accent);
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      margin-bottom: 40px;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    /* ── Slider Wrapper ── */
+    .slider-section {
+      width: 100%;
+      max-width: 1200px;
+      position: relative;
+    }
+
+    .slider-viewport {
+      overflow: hidden;
+      border-radius: var(--card-radius);
+    }
+
+    .slider-track {
+      display: flex;
+      gap: var(--card-gap);
+      transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+      will-change: transform;
+    }
+
+    /* ── Cards ── */
+    .slide-card {
+      flex: 0 0 calc((100% - 2 * var(--card-gap)) / 3);
+      min-width: calc((100% - 2 * var(--card-gap)) / 3);
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 4/5;
+      cursor: pointer;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .slide-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .slide-card .bg {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.5s ease;
+    }
+    .slide-card:hover .bg { transform: scale(1.05); }
+
+    .slide-card .overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%);
+    }
+
+    .slide-card .content {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 28px 22px;
+    }
+
+    .slide-card .tag {
+      display: inline-block;
+      background: var(--accent);
+      color: #0d0d0d;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .slide-card h3 {
+      font-family: 'Playfair Display', serif;
+      color: #fff;
+      font-size: clamp(1rem, 2vw, 1.35rem);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .slide-card p {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.82rem;
+      font-weight: 300;
+    }
+
+    /* ── Nav Buttons ── */
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      border: 2px solid rgba(232, 200, 125, 0.4);
+      background: rgba(13,13,13,0.7);
+      color: var(--accent);
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(10px);
+      transition: background 0.25s, border-color 0.25s, transform 0.25s;
+    }
+    .nav-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d0d0d;
+      transform: translateY(-50%) scale(1.1);
+    }
+    .prev-btn { left: -60px; }
+    .next-btn { right: -60px; }
+
+    /* ── Dots ── */
+    .dots-wrapper {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .dot {
+      width: var(--dot-size);
+      height: var(--dot-size);
+      border-radius: 50%;
+      background: rgba(232, 200, 125, 0.25);
+      border: 1.5px solid rgba(232, 200, 125, 0.4);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s, width 0.3s;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      width: 28px;
+      border-radius: 5px;
+      transform: scaleY(1.1);
+    }
+
+    .dot:hover:not(.active) {
+      background: rgba(232, 200, 125, 0.5);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .slide-card {
+        flex: 0 0 calc((100% - var(--card-gap)) / 2);
+        min-width: calc((100% - var(--card-gap)) / 2);
+      }
+      .prev-btn { left: -14px; }
+      .next-btn { right: -14px; }
+    }
+
+    @media (max-width: 560px) {
+      .slide-card {
+        flex: 0 0 100%;
+        min-width: 100%;
+        aspect-ratio: 3/4;
+      }
+      .prev-btn { left: -12px; }
+      .next-btn { right: -12px; }
+      .nav-btn { width: 40px; height: 40px; font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Featured Collection</h1>
+
+  <div class="slider-section">
+    <!-- Prev -->
+    <button class="nav-btn prev-btn" aria-label="Previous">&#8592;</button>
+
+    <div class="slider-viewport">
+      <div class="slider-track" id="track"></div>
+    </div>
+
+    <!-- Next -->
+    <button class="nav-btn next-btn" aria-label="Next">&#8594;</button>
+  </div>
+
+  <!-- Dots -->
+  <div class="dots-wrapper" id="dots"></div>
+
+  <script>
+    const slides = [
+      { tag: "Nature",     title: "Into the Misty Forest",    desc: "A journey through fog and silence",    color: "#1a3a2a", grad: "linear-gradient(135deg,#1a3a2a,#2d6a4f)" },
+      { tag: "Ocean",      title: "Deep Blue Horizon",         desc: "Where sky meets the endless sea",      color: "#0a1f44", grad: "linear-gradient(135deg,#0a1f44,#1565c0)" },
+      { tag: "Desert",     title: "Golden Dunes at Dusk",      desc: "Sand & silence in perfect harmony",    color: "#4a2c0a", grad: "linear-gradient(135deg,#4a2c0a,#c77c2a)" },
+      { tag: "City",       title: "Neon Nights, Urban Dreams", desc: "The city pulses with electric life",   color: "#12001f", grad: "linear-gradient(135deg,#12001f,#6a0572)" },
+      { tag: "Mountain",   title: "Above the Clouds",          desc: "Peaks that touch the heavens",         color: "#1c2e40", grad: "linear-gradient(135deg,#1c2e40,#4a6fa5)" },
+      { tag: "Sunset",     title: "Crimson Farewell",          desc: "Day bids the world goodbye in fire",   color: "#3d0a0a", grad: "linear-gradient(135deg,#3d0a0a,#c0392b)" },
+      { tag: "Arctic",     title: "Aurora Whispers",           desc: "Lights dance across the frozen sky",   color: "#001a2e", grad: "linear-gradient(135deg,#001a2e,#00796b)" },
+    ];
+
+    /* ─── How many visible per page ─── */
+    function visibleCount() {
+      if (window.innerWidth <= 560) return 1;
+      if (window.innerWidth <= 900) return 2;
+      return 3;
+    }
+
+    const track   = document.getElementById('track');
+    const dotsWrap= document.getElementById('dots');
+    let currentIndex = 0; // logical index (0 … slides.length-1)
+    let isAnimating = false;
+
+    /* Build cards */
+    function buildCards() {
+      track.innerHTML = '';
+      slides.forEach((s, i) => {
+        const card = document.createElement('div');
+        card.className = 'slide-card';
+        card.dataset.index = i;
+        card.innerHTML = `
+          <div class="bg" style="background:${s.grad}"></div>
+          <div class="overlay"></div>
+          <div class="content">
+            <span class="tag">${s.tag}</span>
+            <h3>${s.title}</h3>
+            <p>${s.desc}</p>
+          </div>`;
+        track.appendChild(card);
+      });
+    }
+
+    /* Build dots (one per real slide) */
+    function buildDots() {
+      dotsWrap.innerHTML = '';
+      slides.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'dot' + (i === currentIndex ? ' active' : '');
+        d.addEventListener('click', () => goTo(i));
+        dotsWrap.appendChild(d);
+      });
+    }
+
+    function updateDots() {
+      document.querySelectorAll('.dot').forEach((d, i) => {
+        d.classList.toggle('active', i === currentIndex);
+      });
+    }
+
+    /* Move track to show `currentIndex` as first visible */
+    function applyPosition(animated = true) {
+      const vc   = visibleCount();
+      const gap  = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--card-gap')) || 24;
+      // card width relative to viewport
+      const vpW  = track.parentElement.clientWidth;
+      const cardW = (vpW - gap * (vc - 1)) / vc;
+      const offset = currentIndex * (cardW + gap);
+      track.style.transition = animated
+        ? 'transform 0.55s cubic-bezier(0.77, 0, 0.175, 1)'
+        : 'none';
+      track.style.transform = `translateX(-${offset}px)`;
+    }
+
+    /* Navigate */
+    function goTo(index, animated = true) {
+      if (isAnimating) return;
+      isAnimating = true;
+      // Clamp within infinite loop logic
+      const n = slides.length;
+      currentIndex = ((index % n) + n) % n;
+      applyPosition(animated);
+      updateDots();
+      setTimeout(() => { isAnimating = false; }, 580);
+    }
+
+    function next() { goTo(currentIndex + 1); }
+    function prev() { goTo(currentIndex - 1); }
+
+    /* Button listeners */
+    document.querySelector('.next-btn').addEventListener('click', next);
+    document.querySelector('.prev-btn').addEventListener('click', prev);
+
+    /* Auto-play */
+    let autoplay = setInterval(next, 3500);
+    const sliderSection = document.querySelector('.slider-section');
+    sliderSection.addEventListener('mouseenter', () => clearInterval(autoplay));
+    sliderSection.addEventListener('mouseleave', () => { autoplay = setInterval(next, 3500); });
+
+    /* Touch swipe */
+    let touchStartX = 0;
+    track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    track.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
+    });
+
+    /* Resize */
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => applyPosition(false), 120);
+    });
+
+    /* Init */
+    buildCards();
+    buildDots();
+    applyPosition(false);
+  </script>
+</body>
+</html>
